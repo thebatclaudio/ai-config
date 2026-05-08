@@ -41,7 +41,7 @@ tone: null                        # e.g., "professional", "casual", "mixed"
 social_handles: {}               # { "twitter": "@handle", "linkedin": "...", ... }
 content_interests: []            # topics for news-curator
 diet_restrictions: []            # for meal-planner
-budget_currency: "USD"           # default currency
+budget_currency: "EUR"           # default currency
 journal_location: null           # overrides default ~/Documents/opencode/journal/
 budget_ledger_location: null     # overrides default ~/Documents/opencode/budget/ledger.csv
 ```
