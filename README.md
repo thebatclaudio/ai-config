@@ -10,16 +10,50 @@ local OpenCode runtime via symbolic links so every change is picked up live.
 
 ```
 ai-config/
-├── agents/                # Agent definitions  (symlinked to <opencode>/agent)
-├── commands/              # Slash commands     (symlinked to <opencode>/command)
-├── skills/                # Reusable scripts   (symlinked to <opencode>/skill)
-├── mcp/                   # MCP server configs (symlinked to <opencode>/mcp)
+├── agents/                # Global agent definitions  (→ <opencode>/agent)
+├── commands/              # Global slash commands     (→ <opencode>/command)
+├── skills/                # Global reusable scripts   (→ <opencode>/skill)
+├── mcp/                   # Global MCP server configs (→ <opencode>/mcp)
+├── .opencode/             # Local entries (this repo only — auto-discovered)
+│   ├── AGENTS.md          #   Local-scope instructions addendum
+│   ├── agent/             #   Meta agents (curator, doctor, scaffolder)
+│   ├── command/           #   Meta commands (scaffold, sync, audit)
+│   ├── skill/             #   Meta skills (linter, doctor)
+│   └── mcp/               #   (empty — no project-only MCPs this round)
 ├── AGENTS.md              # Registry + operating manual (loaded as instructions)
 ├── opencode.json.example  # Template; {{BASE_PROJECT_PATH}} is substituted
 ├── .env.example           # Variable template — copy to `.env`
 ├── setup.py               # Automation script (idempotent, cross-platform)
 └── requirements.txt       # python-dotenv
 ```
+
+---
+
+## Global vs. Local Layers
+
+This repository has **two layers** of configuration.
+
+### Global Layer (root folders)
+
+`agents/`, `commands/`, `skills/`, `mcp/` are **symlinked** into
+`~/.config/opencode/{agent,command,skill,mcp}` by `setup.py`. This makes every
+entry available in every project you work on — your personal agents (budget
+coach, news curator) and dev agents (code reviewer, git historian) are always
+accessible.
+
+### Local Layer (`.opencode/`)
+
+Files under `.opencode/` are **not** symlinked globally. OpenCode discovers
+them automatically when your current working directory is this repository.
+They contain **meta-tooling** — agents and commands that maintain the framework
+itself:
+
+- `@agents-curator` — lints AGENTS.md vs. the filesystem.
+- `@setup-doctor` — validates symlinks, config, and `.env`.
+- `@entry-scaffolder` — creates new agent/command/skill stubs.
+- `/scaffold` — shortcut to scaffold a new entry.
+- `/sync` — re-run `setup.py` without leaving the chat.
+- `/audit-config` — run curator + doctor in one command.
 
 ---
 
@@ -109,7 +143,9 @@ repository.
 
 ## Adding new entries
 
-1. Drop a new file into the relevant folder:
+### Global entries (available everywhere)
+
+1. Drop a new file into the relevant root folder:
    - Agent     → `agents/<kebab-case-name>.md`
    - Command   → `commands/<kebab-case-name>.md`
    - Skill     → `skills/<snake_case_name>.py`
@@ -117,6 +153,16 @@ repository.
 2. Document it in [`AGENTS.md`](./AGENTS.md) (registry table + doc block).
 3. Commit. No further `setup.py` run is needed — the symlinks make the
    change visible to OpenCode immediately.
+
+### Local entries (this repo only)
+
+1. Place the file under `.opencode/` instead:
+   - Agent     → `.opencode/agent/<kebab-case-name>.md`
+   - Command   → `.opencode/command/<kebab-case-name>.md`
+   - Skill     → `.opencode/skill/<snake_case_name>.py`
+   - MCP       → `.opencode/mcp/<server-name>.json`
+2. Document it in [`.opencode/AGENTS.md`](./.opencode/AGENTS.md).
+3. Commit. OpenCode discovers `.opencode/` automatically when CWD is this repo.
 
 ---
 
