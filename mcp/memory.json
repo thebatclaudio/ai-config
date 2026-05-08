@@ -1,0 +1,10 @@
+{
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-memory"
+  ],
+  "env": {
+    "OPENCODE_MEMORY_STORE": "~/.local/share/opencode/memory/store.json"
+  }
+}

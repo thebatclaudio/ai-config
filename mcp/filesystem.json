@@ -1,0 +1,10 @@
+{
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "{{BASE_PROJECT_PATH}}/../..",
+    "~/Documents",
+    "~/.config/opencode"
+  ]
+}
