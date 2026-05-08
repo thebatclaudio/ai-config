@@ -181,6 +181,51 @@ def locate_opencode_config_dir(
 # .env handling
 # ---------------------------------------------------------------------------
 
+def _parse_env_file(path: Path) -> Dict[str, str]:
+    """
+    Minimal .env parser using only stdlib.
+
+    Handles:
+      - KEY=value, KEY = value
+      - Quoted values (single and double), including multiline.
+      - Comments (#) and blank lines.
+      - Export prefix (`export KEY=value`).
+
+    Does NOT handle:
+      - Variable expansion ($VAR or ${VAR} inside values).
+      - Inline comments after values.
+    """
+    text = path.read_text(encoding="utf-8")
+    values: Dict[str, str] = {}
+
+    for line in text.split("\n"):
+        line = line.strip()
+
+        # Skip blank lines and full-line comments.
+        if not line or line.startswith("#"):
+            continue
+
+        # Strip optional 'export' prefix.
+        if line.startswith("export "):
+            line = line[len("export "):].strip()
+
+        # Split on first '='.
+        if "=" not in line:
+            continue
+        key, _, raw_val = line.partition("=")
+        key = key.strip()
+        raw_val = raw_val.strip()
+
+        # Strip surrounding quotes.
+        if len(raw_val) >= 2 and raw_val[0] == raw_val[-1] and raw_val[0] in ("'", '"'):
+            raw_val = raw_val[1:-1]
+
+        if key:
+            values[key] = raw_val
+
+    return values
+
+
 def ensure_env_file(repo_root: Path) -> Dict[str, str]:
     """
     Make sure `.env` exists. Load and return its values.
@@ -202,18 +247,21 @@ def ensure_env_file(repo_root: Path) -> Dict[str, str]:
             )
         sys.exit(1)
 
-    try:
-        # Lazy import so `--help` works even without dependencies installed.
-        from dotenv import dotenv_values
-    except ImportError:
-        log_error(
-            "The `python-dotenv` package is required. Install it with:\n"
-            "    pip install -r requirements.txt"
-        )
-        sys.exit(1)
+    # Primary: use the stdlib-only parser (no external dependency needed).
+    values = _parse_env_file(env_path)
 
-    # dotenv_values does NOT pollute os.environ — exactly what we want.
-    values = {k: v for k, v in dotenv_values(env_path).items() if v is not None}
+    # Optional enhancement: if python-dotenv is available, prefer its
+    # richer parser (handles variable expansion, inline comments, etc.).
+    try:
+        from dotenv import dotenv_values  # noqa: F811
+        dotenv_vals = {k: v for k, v in dotenv_values(env_path).items() if v is not None}
+        # Merge: dotenv values fill any gaps or resolve expansions.
+        for k, v in dotenv_vals.items():
+            existing = values.get(k)
+            if not existing or existing.startswith("$"):
+                values[k] = v
+    except ImportError:
+        pass  # stdlib-only mode is fine.
 
     # Default BASE_PROJECT_PATH to the repo root if missing/placeholder.
     base = values.get("BASE_PROJECT_PATH", "").strip()

@@ -1,1 +1,3 @@
+# Optional: enables richer .env parsing (variable expansion, inline comments).
+# setup.py works without it via the built-in stdlib fallback.
 python-dotenv>=1.0.0
