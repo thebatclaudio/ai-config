@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@setup-doctor"
-model: null
-tools: [read, bash]
 ---
 
 # setup-doctor

@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@entry-scaffolder"
-model: null
-tools: [read, edit, bash]
 ---
 
 # entry-scaffolder

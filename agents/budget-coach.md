@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@budget-coach"
-model: null
-tools: [read, edit, bash]
 ---
 
 # budget-coach

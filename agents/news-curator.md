@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@news-curator"
-model: null
-tools: [read, bash]
 ---
 
 # news-curator

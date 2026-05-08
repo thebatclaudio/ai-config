@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@learning-tutor"
-model: null
-tools: [read, bash]
 ---
 
 # learning-tutor

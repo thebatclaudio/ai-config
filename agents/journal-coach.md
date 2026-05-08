@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@journal-coach"
-model: null
-tools: [read, edit, bash]
 ---
 
 # journal-coach

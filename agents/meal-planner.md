@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@meal-planner"
-model: null
-tools: [read, bash]
 ---
 
 # meal-planner

@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@docs-writer"
-model: null
-tools: [read, bash]
 ---
 
 # docs-writer

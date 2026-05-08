@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@decision-helper"
-model: null
-tools: [read]
 ---
 
 # decision-helper

@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@agents-curator"
-model: null
-tools: [read, edit, bash]
 ---
 
 # agents-curator

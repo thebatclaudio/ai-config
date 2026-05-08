@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@trip-planner"
-model: null
-tools: [read, bash, fetch]
 ---
 
 # trip-planner

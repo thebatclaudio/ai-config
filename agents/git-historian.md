@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@git-historian"
-model: null
-tools: [read, bash]
 ---
 
 # git-historian

@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@debug-detective"
-model: null
-tools: [read, bash]
 ---
 
 # debug-detective

@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@prompt-engineer"
-model: null
-tools: [read, edit]
 ---
 
 # prompt-engineer

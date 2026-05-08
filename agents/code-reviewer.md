@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@code-reviewer"
-model: null
-tools: [read, bash]
 ---
 
 # code-reviewer

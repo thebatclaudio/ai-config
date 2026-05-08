@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@daily-planner"
-model: null
-tools: [read, bash]
 ---
 
 # daily-planner

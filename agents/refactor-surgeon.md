@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@refactor-surgeon"
-model: null
-tools: [read, edit, bash]
 ---
 
 # refactor-surgeon

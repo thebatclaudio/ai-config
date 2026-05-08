@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@dependency-auditor"
-model: null
-tools: [read, bash]
 ---
 
 # dependency-auditor

@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@social-strategist"
-model: null
-tools: [read, bash]
 ---
 
 # social-strategist

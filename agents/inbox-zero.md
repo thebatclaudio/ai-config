@@ -1,8 +1,6 @@
 ---
 type: agent
 trigger: "@inbox-zero"
-model: null
-tools: [read, bash]
 ---
 
 # inbox-zero
