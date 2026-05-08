@@ -110,6 +110,7 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | `/review` | global | Run code-reviewer on staged changes | `commands/review.md` |
 | `/explain` | global | Plain-language walkthrough of code | `commands/explain.md` |
 | `/changelog` | global | Group commits into a changelog entry | `commands/changelog.md` |
+| `/pimp-readme` | global | Analyze and rewrite README.md with improved structure, tone, and emoji | `commands/pimp-readme.md` |
 
 ### META Commands (Local, `.opencode/`)
 
