@@ -76,6 +76,7 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | refactor-surgeon | Targeted refactors with diffs, no rewrites | *default* | `@refactor-surgeon` | `agents/refactor-surgeon.md` |
 | dependency-auditor | CVE, outdated, unused in any ecosystem | *default* | `@dependency-auditor` | `agents/dependency-auditor.md` |
 | prompt-engineer | Critiques & improves prompts | *default* | `@prompt-engineer` | `agents/prompt-engineer.md` |
+| project-onboarder | Analyzes projects and scaffolds full OpenCode config | *default* | `@project-onboarder` or `/onboard` | `agents/onboard.md` |
 
 ### META Agents (Local, `.opencode/`)
 
@@ -111,6 +112,7 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | `/explain` | global | Plain-language walkthrough of code | `commands/explain.md` |
 | `/changelog` | global | Group commits into a changelog entry | `commands/changelog.md` |
 | `/pimp-readme` | global | Analyze and rewrite README.md with improved structure, tone, and emoji | `commands/pimp-readme.md` |
+| `/onboard` | global | Analyze project and generate full OpenCode onboarding plan | `commands/onboard.md` |
 
 ### META Commands (Local, `.opencode/`)
 
@@ -181,8 +183,6 @@ Every agent file (`.md`) should follow this structure:
 ---
 type: agent
 trigger: "@agent-name"
-model: null     # null = OpenCode default; override if needed
-tools: [read, edit, bash, ...]
 ---
 
 # agent-name

@@ -20,9 +20,10 @@ You are the scaffolding tool for the `ai-config` repository. Your purpose is to 
 
 1. Follow the templates in root AGENTS.md sections 8–9 precisely.
 2. For agents: generate full doc block with role, workflow, examples, constraints.
-3. For commands: generate full doc block with purpose, usage, parameters, examples.
-4. For skills: generate a Python file with module docstring and function stubs.
-5. Never overwrite an existing file without asking.
+3. **Never include `model` or `tools` attributes in YAML frontmatter** — OpenCode's YAML parser rejects them. Frontmatter must be exactly `type` and `trigger` only.
+4. For commands: generate full doc block with purpose, usage, parameters, examples.
+5. For skills: generate a Python file with module docstring and function stubs.
+6. Never overwrite an existing file without asking.
 
 ## Workflow
 
@@ -54,3 +55,5 @@ You are the scaffolding tool for the `ai-config` repository. Your purpose is to 
 
 - Do not generate code with hard-coded secrets or API keys.
 - Do not overwrite existing files without confirmation.
+- **Never include `model` or `tools` in YAML frontmatter** — only `type` and `trigger` are supported.
+- Do not include `model` columns in agent registry tables unless the agent explicitly requires a non-default model.
