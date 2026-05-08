@@ -1,52 +1,59 @@
 # ai-config
 
-Centralised, version-controlled OpenCode configuration. Edit agents, commands,
-skills, and MCP servers in this repository — `setup.py` bridges them into the
-local OpenCode runtime via symbolic links so every change is picked up live.
+Centralised, version-controlled configuration for your OpenCode runtime. Edit agents, commands, skills, and MCP servers in one place — `setup.py` bridges them into OpenCode via symlinks so every change is picked up live.
 
 ---
 
-## Folder layout
+## Table of Contents
+
+- [Folder layout](#folder-layout)
+- [Global vs. Local layers](#global-vs-local-layers)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [CLI reference](#cli-reference)
+- [Adding new entries](#adding-new-entries)
+- [Cross-platform notes](#cross-platform-notes)
+- [Contributing](#contributing)
+- [License](#license)
+- [Troubleshooting](#troubleshooting)
+- [Security](#security)
+
+---
+
+## 📁 Folder layout
 
 ```
 ai-config/
-├── agents/                # Global agent definitions  (→ <opencode>/agent)
-├── commands/              # Global slash commands     (→ <opencode>/command)
-├── skills/                # Global reusable scripts   (→ <opencode>/skill)
-├── mcp/                   # Global MCP server configs (→ <opencode>/mcp)
-├── .opencode/             # Local entries (this repo only — auto-discovered)
-│   ├── AGENTS.md          #   Local-scope instructions addendum
-│   ├── agent/             #   Meta agents (curator, doctor, scaffolder)
-│   ├── command/           #   Meta commands (scaffold, sync, audit)
-│   ├── skill/             #   Meta skills (linter, doctor)
-│   └── mcp/               #   (empty — no project-only MCPs this round)
-├── AGENTS.md              # Registry + operating manual (loaded as instructions)
+├── agents/           # Global agent definitions  (→ <opencode>/agent)
+├── commands/         # Global slash commands     (→ <opencode>/command)
+├── skills/           # Global reusable scripts   (→ <opencode>/skill)
+├── mcp/              # Global MCP server configs (→ <opencode>/mcp)
+├── .opencode/        # Local entries (this repo only — auto-discovered)
+│   ├── AGENTS.md     #   Local-scope instructions addendum
+│   ├── agent/        #   Meta agents (curator, doctor, scaffolder)
+│   ├── command/      #   Meta commands (scaffold, sync, audit)
+│   ├── skill/        #   Meta skills (linter, doctor)
+│   └── mcp/          #   (empty — no project-only MCPs this round)
+├── AGENTS.md         # Registry + operating manual (loaded as instructions)
 ├── opencode.json.example  # Template; {{BASE_PROJECT_PATH}} is substituted
-├── .env.example           # Variable template — copy to `.env`
-├── setup.py               # Automation script (idempotent, cross-platform)
-└── requirements.txt       # python-dotenv
+├── .env.example      # Variable template — copy to `.env`
+├── setup.py          # Automation script (idempotent, cross-platform)
+└── requirements.txt  # python-dotenv
 ```
 
 ---
 
-## Global vs. Local Layers
+## Global vs. Local layers
 
 This repository has **two layers** of configuration.
 
-### Global Layer (root folders)
+### Global layer (root folders)
 
-`agents/`, `commands/`, `skills/`, `mcp/` are **symlinked** into
-`~/.config/opencode/{agent,command,skill,mcp}` by `setup.py`. This makes every
-entry available in every project you work on — your personal agents (budget
-coach, news curator) and dev agents (code reviewer, git historian) are always
-accessible.
+`agents/`, `commands/`, `skills/`, `mcp/` are **symlinked** into `~/.config/opencode/{agent,command,skill,mcp}` by `setup.py`. This makes every entry available in every project you work on — your personal agents (budget coach, news curator) and dev agents (code reviewer, git historian) are always accessible.
 
-### Local Layer (`.opencode/`)
+### Local layer (`.opencode/`)
 
-Files under `.opencode/` are **not** symlinked globally. OpenCode discovers
-them automatically when your current working directory is this repository.
-They contain **meta-tooling** — agents and commands that maintain the framework
-itself:
+Files under `.opencode/` are **not** symlinked globally. OpenCode discovers them automatically when your current working directory is this repository. They contain **meta-tooling** — agents and commands that maintain the framework itself:
 
 - `@agents-curator` — lints AGENTS.md vs. the filesystem.
 - `@setup-doctor` — validates symlinks, config, and `.env`.
@@ -57,7 +64,7 @@ itself:
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
 ```bash
 # 1. Provide your environment values
@@ -75,22 +82,16 @@ Re-run `python setup.py` at any time — it is idempotent.
 
 ---
 
-## How it works
+## ⚙️ How it works
 
-1. **Read `.env`.** `setup.py` loads variables via `python-dotenv` without
-   polluting the process environment.
-2. **Render the template.** Every `{{KEY}}` token in `opencode.json.example`
-   is replaced with the matching `.env` value (JSON-escaped). Missing tokens
-   are warned about, never silently dropped.
-3. **Merge into the active config.** The rendered JSON is deep-merged into
-   the existing `opencode.json` at the OpenCode config directory:
+1. **Read `.env`.** `setup.py` loads variables via `python-dotenv` without polluting the process environment.
+2. **Render the template.** Every `{{KEY}}` token in `opencode.json.example` is replaced with the matching `.env` value (JSON-escaped). Missing tokens are warned about, never silently dropped.
+3. **Merge into the active config.** The rendered JSON is deep-merged into the existing `opencode.json` at the OpenCode config directory:
    - **Existing values win** on collision (your manual edits are preserved).
    - **Lists** are unioned with order preserved and duplicates removed.
    - **Dicts** are merged recursively.
-   - Every collision is reported in the end-of-run recap so you can decide
-     whether to reconcile.
-4. **Symlink the folders.** Local plural directories are linked into the
-   singular paths OpenCode expects:
+   - Every collision is reported in the end-of-run recap so you can decide whether to reconcile.
+4. **Symlink the folders.** Local plural directories are linked into the singular paths OpenCode expects:
 
    | Local        | OpenCode target               |
    | ------------ | ----------------------------- |
@@ -99,11 +100,9 @@ Re-run `python setup.py` at any time — it is idempotent.
    | `skills/`    | `<opencode-dir>/skill`        |
    | `mcp/`       | `<opencode-dir>/mcp`          |
 
-   Existing real directories are backed up before being replaced (only when
-   `--force` is given). Existing correct symlinks are skipped.
+   Existing real directories are backed up before being replaced (only when `--force` is given). Existing correct symlinks are skipped.
 
-5. **Recap.** A summary block prints created / skipped / replaced symlinks,
-   any backups, and a `[WARN]` list of every merge collision.
+5. **Recap.** A summary block prints created / skipped / replaced symlinks, any backups, and a `[WARN]` list of every merge collision.
 
 The OpenCode config directory is resolved with this precedence:
 
@@ -125,19 +124,7 @@ python setup.py --uninstall           # remove only symlinks pointing into this 
 python setup.py --opencode-dir PATH   # override the OpenCode config directory
 ```
 
-`--uninstall` is conservative: it leaves real directories and unrelated
-symlinks alone, removing only symlinks whose target lives inside this
-repository.
-
----
-
-## Cross-platform notes
-
-- **Linux / macOS:** symlink creation works out of the box.
-- **Windows:** creating symbolic links requires either Developer Mode
-  (Settings → Privacy & security → For developers) or an elevated shell.
-  When permission is denied for a directory link, `setup.py` automatically
-  falls back to an NTFS directory junction so the bridge still works.
+`--uninstall` is conservative: it leaves real directories and unrelated symlinks alone, removing only symlinks whose target lives inside this repository.
 
 ---
 
@@ -151,8 +138,7 @@ repository.
    - Skill     → `skills/<snake_case_name>.py`
    - MCP       → `mcp/<server-name>.json`
 2. Document it in [`AGENTS.md`](./AGENTS.md) (registry table + doc block).
-3. Commit. No further `setup.py` run is needed — the symlinks make the
-   change visible to OpenCode immediately.
+3. Commit. No further `setup.py` run is needed — the symlinks make the change visible to OpenCode immediately.
 
 ### Local entries (this repo only)
 
@@ -163,6 +149,33 @@ repository.
    - MCP       → `.opencode/mcp/<server-name>.json`
 2. Document it in [`.opencode/AGENTS.md`](./.opencode/AGENTS.md).
 3. Commit. OpenCode discovers `.opencode/` automatically when CWD is this repo.
+
+---
+
+## Cross-platform notes
+
+- **Linux / macOS:** symlink creation works out of the box.
+- **Windows:** creating symbolic links requires either Developer Mode (Settings → Privacy & security → For developers) or an elevated shell. When permission is denied for a directory link, `setup.py` automatically falls back to an NTFS directory junction so the bridge still works.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Additions follow a simple workflow:
+
+1. **Scaffold** a new entry using `/scaffold` or by hand.
+2. **Place** it in the right directory — root folders for global entries, `.opencode/` for repo-scoped ones.
+3. **Document** it in the corresponding `AGENTS.md` registry table with a full doc block.
+4. **Run** `/audit-config` to validate everything is in sync.
+5. **Commit** and push.
+
+Before submitting, check that `setup.py` still runs without errors and that your entry follows the naming conventions (`kebab-case.md` for agents/commands, `snake_case.py` for skills). See `AGENTS.md` for the full conventions reference.
+
+---
+
+## License
+
+This project does not currently include a license file. If you'd like to use, adapt, or distribute it, please open an issue to discuss terms. When you're ready to pick a license, [choosealicense.com](https://choosealicense.com/) is a great place to start.
 
 ---
 
@@ -178,8 +191,6 @@ repository.
 
 ---
 
-## Security
+## 🔒 Security
 
-`.env` is git-ignored. Never commit API keys. Keep secrets out of files
-inside `agents/`, `commands/`, `skills/`, and `mcp/` — reference them via
-environment variables instead.
+`.env` is git-ignored. Never commit API keys. Keep secrets out of files inside `agents/`, `commands/`, `skills/`, and `mcp/` — reference them via environment variables instead.
