@@ -77,6 +77,7 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | dependency-auditor | CVE, outdated, unused in any ecosystem | *default* | `@dependency-auditor` | `agents/dependency-auditor.md` |
 | prompt-engineer | Critiques & improves prompts | *default* | `@prompt-engineer` | `agents/prompt-engineer.md` |
 | project-onboarder | Analyzes projects and scaffolds full OpenCode config | *default* | `@project-onboarder` or `/onboard` | `agents/onboard.md` |
+| project-bootstrapper | Discovery → research → stack proposal → scaffold a new project + its OpenCode config | *default* | `@project-bootstrapper` or `/bootstrap` | `agents/project-bootstrapper.md` |
 
 ### META Agents (Local, `.opencode/`)
 
@@ -113,6 +114,7 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | `/changelog` | global | Group commits into a changelog entry | `commands/changelog.md` |
 | `/pimp-readme` | global | Analyze and rewrite README.md with improved structure, tone, and emoji | `commands/pimp-readme.md` |
 | `/onboard` | global | Analyze project and generate full OpenCode onboarding plan | `commands/onboard.md` |
+| `/bootstrap` | global | Bootstrap a brand-new project: discovery, research, stack pick, scaffold | `commands/bootstrap.md` |
 
 ### META Commands (Local, `.opencode/`)
 
