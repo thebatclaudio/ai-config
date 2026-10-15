@@ -193,7 +193,13 @@ Doctor healthy, linter green.
      are expanded/normalized for Claude.
    - Local: `.claude/{agents,commands}` → `dist/claude/local/*`, `.claude/skills` → `ai/skills`,
      `.claude/CLAUDE.md` importing `ai/AGENTS.md`.
-   - 7 new tests (fake `claude` CLI); `core.write_text` added.
+   - 13 tests (fake `claude` CLI); `core.write_text` added.
+   - **Review hardening:** never replaces a symlink/file it doesn't own (collision unless `--force`,
+     which backs it up); writes through a symlinked `CLAUDE.md`; refuses broken/duplicated
+     markers instead of editing; frontmatter values are always valid YAML.
+   - **Follow-ups (from review):** MCP `--force` replace has no rollback if `add-json` fails; no
+     record of which MCP servers the installer added, so a spec change makes our own servers look
+     like user collisions (fix: state file of installed specs). Tests still write the live `dist/`.
    - **Bug found:** `mcp/{git,fetch,time}.json` pointed at npm packages that don't exist; they are
      Python servers. Now `uvx mcp-server-<name>`. `uv` isn't installed on this machine, so those
      three are skipped until it is.

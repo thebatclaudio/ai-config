@@ -22,7 +22,7 @@ sys.path.insert(0, str(REPO))
 
 from installer import migrations  # noqa: E402
 from installer.adapters import ADAPTERS  # noqa: E402
-from installer.adapters.claude import ClaudeAdapter, render_item, upsert_block  # noqa: E402
+from installer.adapters.claude import BrokenBlock, ClaudeAdapter, render_item, upsert_block  # noqa: E402
 from installer.adapters.opencode import OpenCodeAdapter  # noqa: E402
 from installer.catalog import FrontmatterError, load_catalog, parse_frontmatter  # noqa: E402
 from installer.core import Context, merge_configs, render_tokens  # noqa: E402
@@ -208,10 +208,6 @@ class OpenCodeAdapterTests(unittest.TestCase):
         self.assertEqual(list(self.cfg.iterdir()), [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class FakeClaudeCli:
     """Stands in for `claude mcp`: records calls and edits the user state file."""
 
@@ -342,3 +338,98 @@ class ClaudeAdapterTests(unittest.TestCase):
         self.assertTrue(report.created)
         self.assertEqual(list(self.cfg.iterdir()), [])
         self.assertEqual(self.cli.calls, [])
+
+
+    def test_frontmatter_is_valid_yaml(self):
+        try:
+            import yaml
+        except ImportError:
+            self.skipTest("PyYAML not installed")
+        cat = load_catalog(REPO, "global")
+        agent = next(i for i in cat.agents if i.name == "code-reviewer")
+        agent.meta["targets"] = {"claude": {"tools": ["*"], "model": "@x # y",
+                                            "hooks": {"Stop": [{"cmd": "a"}]}}}
+        rendered = render_item(agent)
+        self.assertEqual(parse_frontmatter(rendered)[0]["hooks"], {"Stop": [{"cmd": "a"}]})
+        meta = yaml.safe_load(rendered.split("---")[1])
+        self.assertEqual(meta["tools"], "*")
+        self.assertEqual(meta["model"], "@x # y")
+        self.assertEqual(meta["hooks"], {"Stop": [{"cmd": "a"}]})
+        for item in cat.agents + cat.commands:
+            yaml.safe_load(render_item(item).split("---")[1])
+
+    def test_user_symlink_is_never_replaced_without_force(self):
+        mine = self.cfg / "dotfiles-review.md"
+        mine.write_text("my review")
+        (self.cfg / "commands").mkdir()
+        link = self.cfg / "commands" / "review.md"
+        link.symlink_to(mine)
+        with quiet():
+            report = self.adapter().install()
+        self.assertEqual(Path(os.readlink(link)), mine)
+        self.assertTrue(any("review.md" in c for c in report.collisions))
+        with quiet():
+            self.adapter().uninstall()
+        self.assertEqual(Path(os.readlink(link)), mine)
+
+        forced = Context(repo_root=REPO, env=self.ctx.env, force=True, overrides=self.ctx.overrides)
+        with quiet():
+            report = self.adapter(forced).install()
+        self.assertIn(str(REPO), os.path.realpath(link))
+        backups = list((self.cfg / "commands").glob("review.md.bak.*"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(Path(os.readlink(backups[0])), mine)
+
+    def test_symlinked_claude_md_is_written_through(self):
+        real = self.cfg / "dotfiles-CLAUDE.md"
+        real.write_text("# dotfiles\n")
+        (self.cfg / "CLAUDE.md").symlink_to(real)
+        with quiet():
+            self.adapter().install()
+        self.assertTrue((self.cfg / "CLAUDE.md").is_symlink())
+        self.assertIn("@", real.read_text())
+        with quiet():
+            self.adapter().uninstall()
+        self.assertTrue((self.cfg / "CLAUDE.md").is_symlink())
+        self.assertEqual(real.read_text(), "# dotfiles\n")
+
+    def test_broken_markers_leave_file_alone(self):
+        text = "<!-- ai-config:begin x -->\n# my notes, end marker deleted\n"
+        (self.cfg / "CLAUDE.md").write_text(text)
+        with self.assertRaises(BrokenBlock):
+            upsert_block(text, "<!-- ai-config:begin y -->\n@a\n<!-- ai-config:end -->\n")
+        with quiet():
+            report = self.adapter().install()
+            self.adapter().install()
+            self.adapter().uninstall()
+        self.assertTrue(any("markers" in c for c in report.collisions))
+        self.assertEqual((self.cfg / "CLAUDE.md").read_text(), text)
+
+    def test_block_only_file_is_removed_on_uninstall(self):
+        with quiet():
+            self.adapter().install()
+            self.adapter().uninstall()
+        self.assertFalse((self.cfg / "CLAUDE.md").exists())
+        self.assertEqual(list(self.cfg.glob("CLAUDE.md.bak.*")), [])
+
+    def test_local_layer_install_and_uninstall(self):
+        repo = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, repo)
+        shutil.copytree(REPO / "ai", repo / "ai")
+        ctx = Context(repo_root=repo, env={"BASE_PROJECT_PATH": str(repo)})
+        adapter = self.adapter(ctx)
+        with quiet():
+            report = adapter.install_local()
+        self.assertEqual(report.errors, [])
+        local = repo / ".claude"
+        self.assertTrue((local / "agents" / "setup-doctor.md").is_file())
+        self.assertTrue((local / "commands" / "sync.md").is_file())
+        self.assertTrue((local / "skills" / "setup-doctor" / "SKILL.md").is_file())
+        self.assertIn("@../ai/AGENTS.md", (local / "CLAUDE.md").read_text())
+        with quiet():
+            adapter.uninstall_local()
+        self.assertEqual(list(local.iterdir()), [])
+
+
+if __name__ == "__main__":
+    unittest.main()

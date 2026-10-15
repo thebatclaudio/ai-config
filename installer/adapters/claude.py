@@ -35,7 +35,7 @@ from typing import Any, Callable, Dict, List, Optional
 from ..catalog import Catalog, Item, McpServer, load_catalog
 from ..core import (
     GENERATED_MARKER, Report, ensure_symlink, log_info, log_ok, log_skip, log_warn,
-    remove_symlink_into, render_tokens, write_text,
+    remove_symlink_into, render_tokens, timestamp, write_text,
 )
 from .base import Adapter
 
@@ -55,7 +55,9 @@ Runner = Callable[..., "subprocess.CompletedProcess[str]"]
 def _yaml_value(value: Any) -> str:
     """Emit a frontmatter value. JSON strings are valid YAML double-quoted scalars."""
     if isinstance(value, list):
-        return ", ".join(str(v) for v in value)  # Claude Code takes "Read, Grep"
+        return json.dumps(", ".join(str(v) for v in value), ensure_ascii=False)  # "Read, Grep"
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False)  # JSON is valid YAML flow
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, (int, float)):
@@ -79,8 +81,25 @@ def managed_block(*imports: Path) -> str:
     return f"{BLOCK_BEGIN} — {GENERATED_MARKER} -->\n{body}\n{BLOCK_END}\n"
 
 
+class BrokenBlock(ValueError):
+    """The begin/end markers are missing, duplicated or out of order."""
+
+
+def block_state(text: str) -> str:
+    """'none' (no markers), 'ok' (exactly one well-formed block) or 'broken'."""
+    begins, ends = text.count(BLOCK_BEGIN), text.count(BLOCK_END)
+    if begins == ends == 0:
+        return "none"
+    if begins == ends == 1 and text.index(BLOCK_BEGIN) < text.index(BLOCK_END):
+        return "ok"
+    return "broken"
+
+
 def upsert_block(existing: str, block: str) -> str:
-    if BLOCK_RE.search(existing):
+    state = block_state(existing)
+    if state == "broken":
+        raise BrokenBlock("ai-config markers are missing, duplicated or out of order")
+    if state == "ok":
         return BLOCK_RE.sub(lambda _: block, existing, count=1)
     sep = "" if not existing or existing.endswith("\n\n") else ("\n" if existing.endswith("\n") else "\n\n")
     return existing + sep + block
@@ -131,7 +150,32 @@ class ClaudeAdapter(Adapter):
                         stale.unlink()
         return out
 
+    def _owned(self, path: Path) -> bool:
+        """True if ``path`` is a symlink pointing into this repo (ours to manage)."""
+        if not path.is_symlink():
+            return False
+        target = Path(os.path.realpath(path))
+        root = self.ctx.repo_root.resolve()
+        return target == root or root in target.parents
+
     def _link(self, src: Path, dst: Path, report: Report, relative: bool = False) -> None:
+        """Link ``dst`` -> ``src`` without ever replacing a path we don't own."""
+        foreign = (dst.exists() or dst.is_symlink()) and not self._owned(dst)
+        if foreign and not self.ctx.force:
+            kind = "symlink" if dst.is_symlink() else "file/dir"
+            msg = f"{dst}: your own {kind} is in the way, left alone (use --force to back it up and replace)"
+            log_warn(msg)
+            report.collisions.append(msg)
+            return
+        if foreign and dst.is_symlink():
+            # --force: ensure_symlink would drop a symlink without a backup, so move it aside.
+            backup = dst.with_name(dst.name + f".bak.{timestamp()}")
+            if self.ctx.dry_run:
+                log_info(f"[dry-run] would back up {dst} -> {backup}")
+            else:
+                dst.rename(backup)
+                log_warn(f"Backed up your symlink: {dst} -> {backup}")
+                report.backups.append(str(backup))
         # In a dry run dist/ files are not written yet; report the link anyway.
         if self.ctx.dry_run and not src.exists():
             log_info(f"[dry-run] would create symlink: {dst} -> {src}")
@@ -151,11 +195,27 @@ class ClaudeAdapter(Adapter):
 
     # -- global ------------------------------------------------------------
 
-    def install_instructions(self, catalog: Catalog, report: Report) -> None:
-        target = self.config_dir() / "CLAUDE.md"
+    def _write_block(self, target: Path, block: str, report: Report) -> None:
+        """Insert/refresh the managed block, writing through a symlinked file."""
+        if target.is_symlink():
+            if not target.exists():
+                report.collisions.append(f"{target}: broken symlink, left alone")
+                return
+            target = Path(os.path.realpath(target))
         existing = target.read_text(encoding="utf-8") if target.is_file() else ""
-        updated = upsert_block(existing, managed_block(self.ctx.repo_root / "AGENTS.md"))
-        write_text(target, updated, self.ctx, report, backup=bool(existing))
+        try:
+            updated = upsert_block(existing, block)
+        except BrokenBlock as exc:
+            msg = f"{target}: {exc}; fix the markers by hand, file left alone"
+            log_warn(msg)
+            report.collisions.append(msg)
+            return
+        # Back up only when the file holds something besides our block.
+        write_text(target, updated, self.ctx, report, backup=bool(BLOCK_RE.sub("", existing).strip()))
+
+    def install_instructions(self, catalog: Catalog, report: Report) -> None:
+        self._write_block(self.config_dir() / "CLAUDE.md",
+                          managed_block(self.ctx.repo_root / "AGENTS.md"), report)
 
     def install_items(self, catalog: Catalog, report: Report) -> None:
         cfg = self.config_dir()
@@ -266,15 +326,24 @@ class ClaudeAdapter(Adapter):
     def _remove_block(self, target: Path, report: Report) -> None:
         if not target.is_file():
             return
-        text = target.read_text(encoding="utf-8")
-        if not BLOCK_RE.search(text):
+        linked = target.is_symlink()
+        real = Path(os.path.realpath(target))
+        text = real.read_text(encoding="utf-8")
+        state = block_state(text)
+        if state == "none":
+            return
+        if state == "broken":
+            report.collisions.append(f"{real}: ai-config markers are broken; file left alone")
             return
         remaining = BLOCK_RE.sub("", text)
-        if self.ctx.dry_run:
-            log_info(f"[dry-run] would remove the ai-config block from {target}")
-        elif remaining.strip():
-            target.write_text(remaining.rstrip("\n") + "\n", encoding="utf-8")
-            log_ok(f"Removed the ai-config block from {target}")
+        if remaining.strip() or linked:
+            # Keep the file (and a symlinked file's target); back up user content.
+            content = remaining.rstrip("\n") + "\n" if remaining.strip() else ""
+            scratch = Report(target=report.target)
+            write_text(real, content, self.ctx, scratch, backup=bool(remaining.strip()))
+            report.backups.extend(scratch.backups)
+        elif self.ctx.dry_run:
+            log_info(f"[dry-run] would remove {target}")
         else:
             target.unlink()
             log_ok(f"Removed {target}")
@@ -305,12 +374,9 @@ class ClaudeAdapter(Adapter):
         self._render(catalog)
         for group in ("agents", "commands"):
             self._link(root / DIST / "local" / group, local / group, report, relative=True)
-        ensure_symlink(root / "ai" / "skills", local / "skills", self.ctx, report, relative=True)
+        self._link(root / "ai" / "skills", local / "skills", report, relative=True)
         if (root / "ai" / "AGENTS.md").is_file():
-            target = local / "CLAUDE.md"
-            existing = target.read_text(encoding="utf-8") if target.is_file() else ""
-            block = managed_block(Path("..") / "ai" / "AGENTS.md")
-            write_text(target, upsert_block(existing, block), self.ctx, report)
+            self._write_block(local / "CLAUDE.md", managed_block(Path("..") / "ai" / "AGENTS.md"), report)
         return report
 
     def uninstall_local(self) -> Report:

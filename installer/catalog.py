@@ -94,7 +94,8 @@ def parse_scalar(raw: str) -> Any:
             k, sep, v = part.partition(":")
             if not sep:
                 raise FrontmatterError(f"flow map entry without ':': {part!r}")
-            out[k.strip()] = parse_scalar(v)
+            key = k.strip()
+            out[str(parse_scalar(key)) if key[:1] in "\"'" else key] = parse_scalar(v)
         return out
     # Bare scalar: strip trailing " # comment".
     s = re.split(r"\s+#", s, maxsplit=1)[0].strip()
