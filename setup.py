@@ -30,6 +30,7 @@ Usage:
     python setup.py --uninstall             # remove only what this installer created
     python setup.py --list                  # show the canonical catalog and exit
     python setup.py --opencode-dir PATH     # per-tool config dir override
+    python setup.py --claude-dir PATH       #   (one flag per tool)
 """
 
 from __future__ import annotations

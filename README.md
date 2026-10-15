@@ -1,6 +1,6 @@
 # ai-config
 
-Centralised, version-controlled configuration for your OpenCode runtime. Edit agents, commands, skills, and MCP servers in one place — `setup.py` bridges them into OpenCode via symlinks so every change is picked up live.
+Centralised, version-controlled configuration for your AI coding tools (OpenCode and Claude Code today; pi next). Edit agents, commands, skills, and MCP servers in one place — `setup.py` installs them into each tool via symlinks so every change is picked up live.
 
 ---
 
@@ -129,9 +129,12 @@ python setup.py --uninstall             # remove only what this installer create
 python setup.py --list                  # print the canonical catalog and exit
 python setup.py --skip-migrate          # skip the legacy data-location migration
 python setup.py --opencode-dir PATH     # override the OpenCode config directory
+python setup.py --claude-dir PATH       # override the Claude Code config directory
 ```
 
 `--uninstall` is conservative: it leaves real directories and unrelated symlinks alone, removing only symlinks whose target lives inside this repository.
+
+**Claude Code** (`--target claude`): `~/.claude/CLAUDE.md` gets a managed block importing `AGENTS.md` (your own text around it is kept); agents and commands are rendered into `dist/claude/` with Claude Code frontmatter and symlinked one by one into `~/.claude/{agents,commands}`; skills are symlinked into `~/.claude/skills`; MCP servers are registered with `claude mcp add-json --scope user` (an existing server with the same name is kept unless `--force`, and servers whose command — e.g. `uvx` — isn't on PATH are skipped). This repo's `ai/` layer goes to the git-ignored `.claude/`.
 
 `setup.py` is a thin CLI; the logic lives in `installer/` (one adapter per tool in `installer/adapters/`). Run the tests with `python3 -m unittest discover -s tests`.
 

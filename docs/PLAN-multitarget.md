@@ -1,6 +1,6 @@
 # Plan: make ai-config tool-agnostic (OpenCode · pi · Claude Code · …)
 
-Status: **Phases 0–3 done** — phases 4–6 pending.
+Status: **Phases 0–3 done**, Phase 4 Claude Code adapter done — rest of 4, 5–6 pending.
 
 ## Goal
 
@@ -180,7 +180,26 @@ Doctor healthy, linter green.
 ### 4. Adapters (in order)
 1. OpenCode — same output as the snapshot, plus a working `mcp` block and `mode: subagent`.
 2. pi — absorb `sync-opencode.py`, add `mcp.json`; then delete the old script.
-3. Claude Code — agents, commands, skills, `CLAUDE.md` import, MCP via the `claude` CLI.
+3. Claude Code — agents, commands, skills, `CLAUDE.md` import, MCP via the `claude` CLI. — ✅ done
+   (built first; it doesn't depend on 1–2).
+   - `installer/adapters/claude.py`: managed `<!-- ai-config:begin/end -->` block in `~/.claude/CLAUDE.md`
+     importing `AGENTS.md`; agents/commands rendered to `dist/claude/<scope>/` (Claude frontmatter:
+     `name`/`description`/`tools`/`model` for agents, `description`/`argument-hint`/`allowed-tools`/`model`
+     for commands; `targets.claude` overrides win) and symlinked per item, so the shared
+     `~/.claude/{agents,commands,skills}` dirs keep the user's own files; stale links pruned.
+   - MCP (decision #4): `claude mcp add-json --scope user`; same spec → skip, different → kept as a
+     collision unless `--force`; uninstall removes only servers still matching the catalog;
+     servers whose command isn't on PATH are skipped with a note. `~` and `{{BASE_PROJECT_PATH}}`
+     are expanded/normalized for Claude.
+   - Local: `.claude/{agents,commands}` → `dist/claude/local/*`, `.claude/skills` → `ai/skills`,
+     `.claude/CLAUDE.md` importing `ai/AGENTS.md`.
+   - 7 new tests (fake `claude` CLI); `core.write_text` added.
+   - **Bug found:** `mcp/{git,fetch,time}.json` pointed at npm packages that don't exist; they are
+     Python servers. Now `uvx mcp-server-<name>`. `uv` isn't installed on this machine, so those
+     three are skipped until it is.
+   - **Verified:** real install created 46 global + 4 local entries; re-run is a no-op for OpenCode
+     and Claude Code; `claude mcp list` shows filesystem, memory, sequential-thinking connected; a
+     live Claude Code session lists the 8 skills, 15 global and 3 local commands.
 
 ### 5. META layer and docs
 - Linter and doctor check every enabled target.
@@ -198,7 +217,7 @@ Doctor healthy, linter green.
 1. pi agents: skills only, or also add a subagent extension later? [4]
 2. ~~Existing data~~ → **moved to `~/Documents/ai-config/`** (decided, done).
 3. ~~Local layer folder name~~ → **`ai/`** (decided).
-4. Claude Code MCP: write `~/.claude.json` via `claude mcp`, or only print the commands? [4]
+4. ~~Claude Code MCP~~ → **write via `claude mcp add-json --scope user`**; print the commands only when the CLI is missing (decided, done).
 
 ## Rollback
 `git checkout pre-multitarget && python setup.py` restores the OpenCode install.

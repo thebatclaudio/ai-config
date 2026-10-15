@@ -304,6 +304,38 @@ def write_json(target: Path, data: Dict[str, Any], ctx: Context, report: Report)
     report.created.append(str(target))
 
 
+def write_text(target: Path, content: str, ctx: Context, report: Report, backup: bool = False) -> None:
+    """
+    Atomically write ``content`` to ``target``. Skips when unchanged.
+    ``backup=True`` copies an existing file aside first (for files users may edit).
+    """
+    if target.is_file() and target.read_text(encoding="utf-8") == content:
+        report.skipped.append(str(target))
+        return
+
+    if ctx.dry_run:
+        log_info(f"[dry-run] would write {target}")
+        report.created.append(str(target))
+        return
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if backup and target.exists():
+        bak = target.with_name(target.name + f".bak.{timestamp()}")
+        shutil.copy2(target, bak)
+        log_warn(f"Backed up existing file: {bak}")
+        report.backups.append(str(bak))
+
+    with tempfile.NamedTemporaryFile(
+        "w", delete=False, dir=str(target.parent), prefix=f".{target.name}.",
+        suffix=".tmp", encoding="utf-8",
+    ) as tmp:
+        tmp.write(content)
+        tmp_name = tmp.name
+    os.replace(tmp_name, target)
+    log_ok(f"Wrote {target}")
+    report.created.append(str(target))
+
+
 # ---------------------------------------------------------------------------
 # Symlinks
 # ---------------------------------------------------------------------------

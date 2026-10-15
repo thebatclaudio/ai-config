@@ -9,7 +9,7 @@ and MCP server defined in this repository.
 
 **This repository is the source of truth for your global AI coding-agent configuration** — tool-neutral agents, commands, skills, MCP servers and instructions. `setup.py` installs them into each coding tool you use (OpenCode, pi, Claude Code, …), making them available everywhere on your machine.
 
-> Transition note: per-tool installer adapters are being built (see `docs/PLAN-multitarget.md`). Today `setup.py` installs into OpenCode only; pi is synced by `~/.pi/agent/sync-opencode.py`.
+> Transition note: per-tool installer adapters are being built (see `docs/PLAN-multitarget.md`). Today `setup.py` installs into OpenCode and Claude Code; pi is still synced by `~/.pi/agent/sync-opencode.py`.
 
 **Key implication:** Any change you make here — a new agent, a tweaked prompt, a skill update — is **global**. It affects every project you work on.
 
@@ -171,11 +171,11 @@ All global; use in any project. No project-scoped MCPs in this version.
 | Name | Transport | Source | Required Env Vars | Purpose |
 |------|-----------|--------|-------------------|---------|
 | filesystem | stdio | `@modelcontextprotocol/server-filesystem` | none | Sandboxed FS access (roots: `~/Projects`, `~/Documents`, `~/.config/ai-config`) |
-| git | stdio | `@modelcontextprotocol/server-git` | none | Structured git ops (log, diff, blame) |
-| fetch | stdio | `@modelcontextprotocol/server-fetch` | none | Web fetch with HTML→markdown |
+| git | stdio | `mcp-server-git` (PyPI, via `uvx`) | none | Structured git ops (log, diff, blame) |
+| fetch | stdio | `mcp-server-fetch` (PyPI, via `uvx`) | none | Web fetch with HTML→markdown |
 | memory | stdio | `@modelcontextprotocol/server-memory` | none | Cross-session knowledge graph (store: `~/.local/share/ai-config/memory/store.json`) |
 | sequential-thinking | stdio | `@modelcontextprotocol/server-sequential-thinking` | none | Multi-step reasoning |
-| time | stdio | `@modelcontextprotocol/server-time` | none | Timezone-aware timestamps |
+| time | stdio | `mcp-server-time` (PyPI, via `uvx`) | none | Timezone-aware timestamps |
 
 ---
 

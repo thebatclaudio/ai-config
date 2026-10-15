@@ -11,6 +11,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -21,6 +22,7 @@ sys.path.insert(0, str(REPO))
 
 from installer import migrations  # noqa: E402
 from installer.adapters import ADAPTERS  # noqa: E402
+from installer.adapters.claude import ClaudeAdapter, render_item, upsert_block  # noqa: E402
 from installer.adapters.opencode import OpenCodeAdapter  # noqa: E402
 from installer.catalog import FrontmatterError, load_catalog, parse_frontmatter  # noqa: E402
 from installer.core import Context, merge_configs, render_tokens  # noqa: E402
@@ -208,3 +210,135 @@ class OpenCodeAdapterTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakeClaudeCli:
+    """Stands in for `claude mcp`: records calls and edits the user state file."""
+
+    def __init__(self, state: Path):
+        self.state = state
+        self.calls = []
+
+    def __call__(self, cmd, **kwargs):
+        self.calls.append(cmd[2:])
+        data = json.loads(self.state.read_text()) if self.state.exists() else {}
+        servers = data.setdefault("mcpServers", {})
+        if cmd[2] == "add-json":
+            servers[cmd[5]] = json.loads(cmd[6])
+        elif cmd[2] == "remove":
+            servers.pop(cmd[-1], None)
+        self.state.write_text(json.dumps(data))
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+
+class ClaudeAdapterTests(unittest.TestCase):
+    def setUp(self):
+        self.cfg = Path(tempfile.mkdtemp())
+        self.ctx = Context(repo_root=REPO, env={"BASE_PROJECT_PATH": str(REPO)},
+                           overrides={"claude_dir": str(self.cfg)})
+        self.cli = FakeClaudeCli(self.cfg / ".claude.json")
+
+    def tearDown(self):
+        shutil.rmtree(self.cfg)
+
+    def adapter(self, ctx=None, which=lambda cmd: "/usr/bin/" + cmd):
+        a = ClaudeAdapter(ctx or self.ctx, runner=self.cli)
+        a.which = which
+        return a
+
+    def test_registered(self):
+        self.assertIs(ADAPTERS["claude"], ClaudeAdapter)
+
+    def test_render_agent_and_command_frontmatter(self):
+        cat = load_catalog(REPO, "global")
+        agent = next(i for i in cat.agents if i.name == "code-reviewer")
+        agent.meta["targets"] = {"claude": {"tools": ["Read", "Grep"], "model": "sonnet"}}
+        meta, body = parse_frontmatter(render_item(agent))
+        self.assertEqual(meta["name"], "code-reviewer")
+        self.assertEqual(meta["tools"], "Read, Grep")
+        self.assertEqual(meta["model"], "sonnet")
+        self.assertNotIn("kind", meta)
+        self.assertEqual(body.strip(), agent.body.strip())
+
+        cmd = next(i for i in cat.commands if i.name == "review")
+        meta, _ = parse_frontmatter(render_item(cmd))
+        self.assertEqual(set(meta), {"description", "argument-hint"})
+
+    def test_upsert_block_keeps_user_text(self):
+        once = upsert_block("# mine\n", "<!-- ai-config:begin x -->\n@a\n<!-- ai-config:end -->\n")
+        twice = upsert_block(once, "<!-- ai-config:begin x -->\n@b\n<!-- ai-config:end -->\n")
+        self.assertTrue(twice.startswith("# mine\n"))
+        self.assertIn("@b", twice)
+        self.assertNotIn("@a", twice)
+
+    def test_install_idempotent_then_uninstall(self):
+        (self.cfg / "CLAUDE.md").write_text("# my notes\n")
+        (self.cfg / "agents").mkdir()
+        (self.cfg / "agents" / "mine.md").write_text("x")
+        (self.cfg / "skills" / "synced").mkdir(parents=True)
+        adapter = self.adapter()
+        with quiet():
+            report = adapter.install()
+        self.assertEqual(report.errors, [])
+        claude_md = (self.cfg / "CLAUDE.md").read_text()
+        self.assertTrue(claude_md.startswith("# my notes"))
+        self.assertIn(f"@{REPO}/AGENTS.md", claude_md)
+        link = self.cfg / "agents" / "code-reviewer.md"
+        self.assertTrue(link.is_symlink())
+        self.assertIn('name: "code-reviewer"', link.read_text())
+        self.assertTrue((self.cfg / "commands" / "review.md").is_symlink())
+        self.assertEqual((self.cfg / "skills" / "csv-ledger").resolve(), REPO / "skills" / "csv-ledger")
+        servers = json.loads((self.cfg / ".claude.json").read_text())["mcpServers"]
+        self.assertEqual(servers["memory"]["env"]["MEMORY_FILE_PATH"],
+                         str(Path.home() / ".local/share/ai-config/memory/store.json"))
+        self.assertNotIn("~", " ".join(servers["filesystem"]["args"]))
+
+        calls = len(self.cli.calls)
+        with quiet():
+            again = adapter.install()
+        self.assertEqual(again.created, [])
+        self.assertEqual(len(self.cli.calls), calls)
+
+        with quiet():
+            adapter.uninstall()
+            adapter.uninstall()
+        self.assertEqual((self.cfg / "CLAUDE.md").read_text(), "# my notes\n")
+        self.assertEqual([p.name for p in (self.cfg / "agents").iterdir()], ["mine.md"])
+        self.assertEqual([p.name for p in (self.cfg / "skills").iterdir()], ["synced"])
+        self.assertEqual(json.loads((self.cfg / ".claude.json").read_text())["mcpServers"], {})
+
+    def test_mcp_keeps_user_server_unless_forced(self):
+        (self.cfg / ".claude.json").write_text(json.dumps(
+            {"mcpServers": {"git": {"type": "stdio", "command": "my-git"}}}))
+        with quiet():
+            report = self.adapter().install()
+        self.assertTrue(any("mcp git" in c for c in report.collisions))
+        servers = json.loads((self.cfg / ".claude.json").read_text())["mcpServers"]
+        self.assertEqual(servers["git"]["command"], "my-git")
+
+        with quiet():
+            self.adapter().uninstall()
+        servers = json.loads((self.cfg / ".claude.json").read_text())["mcpServers"]
+        self.assertEqual(servers, {"git": {"type": "stdio", "command": "my-git"}})
+
+        forced = Context(repo_root=REPO, env=self.ctx.env, force=True, overrides=self.ctx.overrides)
+        with quiet():
+            self.adapter(forced).install()
+        servers = json.loads((self.cfg / ".claude.json").read_text())["mcpServers"]
+        self.assertEqual(servers["git"]["command"], "uvx")
+
+    def test_mcp_skips_missing_command(self):
+        with quiet():
+            report = self.adapter(which=lambda cmd: None if cmd == "uvx" else "/x").install()
+        servers = json.loads((self.cfg / ".claude.json").read_text())["mcpServers"]
+        self.assertNotIn("git", servers)
+        self.assertIn("memory", servers)
+        self.assertTrue(any("`uvx` not found" in n for n in report.notes))
+
+    def test_dry_run_writes_nothing(self):
+        dry = Context(repo_root=REPO, env=self.ctx.env, dry_run=True, overrides=self.ctx.overrides)
+        with quiet():
+            report = self.adapter(dry).install()
+        self.assertTrue(report.created)
+        self.assertEqual(list(self.cfg.iterdir()), [])
+        self.assertEqual(self.cli.calls, [])
