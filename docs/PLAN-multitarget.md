@@ -1,6 +1,6 @@
 # Plan: make ai-config tool-agnostic (OpenCode · pi · Claude Code · …)
 
-Status: **Phases 0–2 done** — phases 3–6 pending.
+Status: **Phases 0–3 done** — phases 4–6 pending.
 
 ## Goal
 
@@ -30,7 +30,10 @@ ai-config/
 ├── ai/                       # local layer (replaces .opencode/), same structure
 ├── installer/
 │   ├── core.py               # env, merge, backup, symlink, recap (from setup.py)
-│   └── adapters/{opencode,pi,claude}.py
+│   ├── catalog.py            # loads canonical items + dependency-free frontmatter parser
+│   ├── migrations.py         # tool-neutral data moves
+│   └── adapters/{base,opencode,pi,claude}.py
+├── tests/                    # unittest suite for the installer
 ├── dist/<target>/            # generated output (gitignored)
 └── setup.py                  # thin CLI: --target opencode,pi,claude | auto
 ```
@@ -141,14 +144,38 @@ skill names match folders; all MCP JSON valid; OpenCode loads 19 agents and **no
   onboarder skill but not installed). Expand `~` / `{{BASE_PROJECT_PATH}}` in MCP args per tool.
 - Phase 5: setup-doctor, `.env.example`, README still OpenCode-only.
 
-### 3. Split the installer
-- `installer/core.py` ← reusable parts of `setup.py`.
-- Adapter interface: `detect()`, `config_dir()`, `render(item)`, `install_mcp()`,
-  `install_instructions()`, `uninstall()`.
-- Render to `dist/<target>/` with a generated-marker; symlink whole dirs where the tool owns them
-  (OpenCode), per-item symlinks in shared dirs (pi `skills/`, `~/.claude/agents/`).
-- Precedence: CLI flag → `OPENCODE_CONFIG_DIR` / `PI_CODING_AGENT_DIR` / `CLAUDE_CONFIG_DIR` → default.
-- CLI: `setup.py [--target all|opencode,pi,claude] [--dry-run] [--force] [--uninstall] [--local]`.
+### 3. Split the installer — ✅ done
+- [x] `installer/core.py`: everything reusable from the old `setup.py` (env, `{{TOKEN}}`
+      rendering, deep merge, atomic JSON write + backup, symlinks with Windows junction
+      fallback, scoped uninstall, per-target `Report` + recap).
+      Change: an unchanged JSON config is no longer rewritten and backed up on every run.
+- [x] `installer/catalog.py`: loads `agents/`, `commands/`, `skills/*/SKILL.md`, `mcp/*.json`
+      for the global (root) and local (`ai/`) layers, validates name/kind/scope/description.
+      Includes a small YAML-subset frontmatter parser (scalars, quoted strings, flow
+      lists/maps, nested blocks for `targets:`), so there is no PyYAML dependency and parsing
+      is deterministic.
+- [x] `installer/migrations.py`: idempotent data moves (old OpenCode paths → ai-config),
+      checksum-verified, never overwrites (conflict → warn, keep both), creates the memory dir.
+- [x] `installer/adapters/base.py`: `Adapter` contract: `detect()`, `default_config_dir()`,
+      `config_dir()` (CLI > env var > default), `install()` = `install_instructions` →
+      `install_items` → `install_mcp`, `install_local()`, `uninstall()`, `uninstall_local()`,
+      `add_arguments()` (per-tool `--<tool>-dir`).
+- [x] `installer/adapters/opencode.py`: ports today's behavior 1:1 and owns the local
+      `.opencode/` links (replacing the manual Phase 1 shim).
+- [x] `setup.py` is now a thin CLI: `--target auto|all|<list>`, `--layer all|global|local`,
+      `--dry-run`, `--force`, `--uninstall`, `--list`, `--skip-migrate`, `--opencode-dir`.
+- [x] `tests/test_installer.py`: 17 tests (parser, catalog validity, merge, token
+      rendering, migrations incl. conflict/dry-run/symlinked legacy path, OpenCode install/idempotency/uninstall,
+      user-key preservation, refusal without `--force`).
+- [x] setup-doctor also compiles `installer/`.
+- **Deviations:** `--layer` instead of `--local` (local layer installs by default since it only
+  touches git-ignored folders). Rendering into `dist/<target>/` moves to Phase 4, the first
+  time an adapter needs to transform files. Added `--list` and `--skip-migrate`.
+
+**Verified:** old and new `setup.py` run in sandboxes produce identical trees and a
+byte-identical `opencode.json`. Re-runs are no-ops (no backup spam). Uninstall removes
+only repo links and is idempotent. The real run on this machine changed nothing (exit 0).
+Doctor healthy, linter green.
 
 ### 4. Adapters (in order)
 1. OpenCode — same output as the snapshot, plus a working `mcp` block and `mode: subagent`.

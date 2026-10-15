@@ -37,7 +37,9 @@ ai-config/
 ├── AGENTS.md         # Registry + operating manual (loaded as instructions)
 ├── opencode.json.example  # Template; {{BASE_PROJECT_PATH}} is substituted
 ├── .env.example      # Variable template — copy to `.env`
-├── setup.py          # Automation script (idempotent, cross-platform)
+├── setup.py          # Installer CLI (idempotent, cross-platform)
+├── installer/        # Installer logic: core, catalog, migrations, per-tool adapters
+├── tests/            # Installer unit tests
 └── requirements.txt  # python-dotenv
 ```
 
@@ -117,14 +119,21 @@ The OpenCode config directory is resolved with this precedence:
 ## CLI reference
 
 ```text
-python setup.py                       # generate config + symlinks
-python setup.py --dry-run             # show planned actions, change nothing
-python setup.py --force               # back up & replace existing real dirs
-python setup.py --uninstall           # remove only symlinks pointing into this repo
-python setup.py --opencode-dir PATH   # override the OpenCode config directory
+python setup.py                         # auto-detect installed tools
+python setup.py --target opencode       # specific tool(s), comma-separated
+python setup.py --target all            # every supported tool
+python setup.py --layer global          # skip the local ai/ layer (global | local | all)
+python setup.py --dry-run               # show planned actions, change nothing
+python setup.py --force                 # back up & replace existing real dirs/files
+python setup.py --uninstall             # remove only what this installer created
+python setup.py --list                  # print the canonical catalog and exit
+python setup.py --skip-migrate          # skip the legacy data-location migration
+python setup.py --opencode-dir PATH     # override the OpenCode config directory
 ```
 
 `--uninstall` is conservative: it leaves real directories and unrelated symlinks alone, removing only symlinks whose target lives inside this repository.
+
+`setup.py` is a thin CLI; the logic lives in `installer/` (one adapter per tool in `installer/adapters/`). Run the tests with `python3 -m unittest discover -s tests`.
 
 ---
 

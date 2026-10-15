@@ -143,16 +143,17 @@ class SetupDoctor:
         if not setup_path.exists():
             report.warnings.append("setup.py not found")
             return
+        sources = [str(setup_path)] + [str(p) for p in sorted((self.repo_root / "installer").rglob("*.py"))]
 
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "py_compile", str(setup_path)],
+                [sys.executable, "-m", "py_compile", *sources],
                 capture_output=True,
                 text=True,
                 timeout=10,
             )
             if result.returncode == 0:
-                report.passed.append("setup.py: compiles clean")
+                report.passed.append(f"setup.py + installer/ ({len(sources)} files): compile clean")
             else:
                 report.errors.append(f"setup.py: compile error — {result.stderr.strip()}")
         except subprocess.TimeoutExpired:

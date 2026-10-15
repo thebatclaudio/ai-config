@@ -4,7 +4,7 @@ kind: command
 scope: local
 description: "Run `setup.py` and show the recap, keeping the bridge fresh."
 trigger: "/sync"
-argument-hint: "[--dry-run] [--force]"
+argument-hint: "[--target <tools>] [--layer <layer>] [--dry-run] [--force]"
 ---
 
 # /sync
@@ -16,11 +16,13 @@ Run `setup.py` and show the recap, keeping the bridge fresh.
 ## Usage
 
 ```
-/sync [--dry-run] [--force]
+/sync [--target <tools>] [--layer <layer>] [--dry-run] [--force]
 ```
 
 ## Parameters
 
+- `--target` — optional; `auto` (default, detected tools), `all`, or a comma list (e.g. `opencode`).
+- `--layer` — optional; `all` (default), `global`, or `local`.
 - `--dry-run` — show what would happen without making changes.
 - `--force` — replace existing real directories at symlink targets.
 
