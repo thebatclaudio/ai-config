@@ -40,4 +40,4 @@ Opens today's entry using the `markdown_journal` skill and invokes the `@journal
 ## See also
 
 - `@journal-coach` agent for guided journal sessions.
-- Journal files stored in `~/Documents/opencode/journal/YYYY-MM-DD.md`.
+- Journal files stored in `~/Documents/ai-config/journal/YYYY-MM-DD.md`.

@@ -18,10 +18,10 @@ class MarkdownJournal:
         Initialize the journal.
         
         Args:
-            root: Journal root directory. Defaults to ~/Documents/opencode/journal/
+            root: Journal root directory. Defaults to ~/Documents/ai-config/journal/
         """
         if root is None:
-            root = Path.home() / "Documents" / "opencode" / "journal"
+            root = Path.home() / "Documents" / "ai-config" / "journal"
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
 

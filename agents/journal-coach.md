@@ -145,4 +145,4 @@ Take 10 minutes. You can write stream-of-consciousness or structured — whateve
 
 ---
 
-(Relies on `markdown_journal` skill. Default location: `~/Documents/opencode/journal/YYYY-MM-DD.md`.)
+(Relies on `markdown_journal` skill. Default location: `~/Documents/ai-config/journal/YYYY-MM-DD.md`.)

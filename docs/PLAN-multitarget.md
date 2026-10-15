@@ -1,6 +1,6 @@
 # Plan: make ai-config tool-agnostic (OpenCode · pi · Claude Code · …)
 
-Status: **Phases 0–1 done** — phases 2–6 pending.
+Status: **Phases 0–2 done** — phases 3–6 pending.
 
 ## Goal
 
@@ -111,11 +111,35 @@ All 7 skill examples execute. Setup doctor is healthy.
 `.opencode/` targets in onboarder/bootstrapper (Phase 2); setup_doctor is OpenCode-only
 (Phase 5). The new `skills/` folders aren't exposed to pi/Claude yet (Phase 4).
 
-### 2. Neutralize content
-- "OpenCode" → "the coding agent" / `{{TOOL_NAME}}` token rendered by adapters.
-- Neutral data paths (configurable in `.env`): `~/Documents/ai-config/{journal,budget}`,
-  `~/.config/ai-config/feeds.toml`; migration step for existing data.
-- Onboarder/bootstrapper: ask target tool(s); emit `AGENTS.md` + neutral content, rendered via adapters.
+### 2. Neutralize content — ✅ done
+- [x] **Data moved** (decision #2): `~/Documents/opencode/budget/ledger.csv` →
+      `~/Documents/ai-config/budget/ledger.csv` (checksum-verified, old dir removed).
+      New defaults: journal `~/Documents/ai-config/journal/`, feeds `~/.config/ai-config/feeds.toml`
+      (new `feeds_location` pref), memory `~/.local/share/ai-config/memory/store.json`.
+      Updated in agents, commands, skills, `markdown_journal.py`, AGENTS.md §2 (new data table).
+- [x] **Bug fix:** `mcp/memory.json` set `OPENCODE_MEMORY_STORE`, which server-memory ignores.
+      Now `MEMORY_FILE_PATH` (the server expands `~` itself). Filesystem MCP root
+      `~/.config/opencode` → `~/.config/ai-config`.
+- [x] **New skill `agent-config-targets`**: one reference for per-tool paths, frontmatter,
+      MCP shapes, instruction precedence, and tool detection. Projects share `AGENTS.md` and
+      `.agents/skills/`; agents, commands and MCP are written natively per tool.
+- [x] `project-onboarder`, `project-bootstrapper`, `/onboard`, `/bootstrap` are multi-tool: they
+      detect and confirm target tools (new `--tools` flag) and write via `agent-config-targets`.
+      Examples rewritten (OpenCode+Claude Code; pi-only).
+- [x] AGENTS.md intro/registry made tool-neutral, with an honest transition note.
+- **Deviation:** no `{{TOOL_NAME}}` token. Neutral wording ("your coding agent") reads fine in
+  every tool and keeps canonical files usable as-is (OpenCode still reads them via symlink).
+
+**Verified:** linter green; frontmatter `description` matches Role/Purpose in all 40 files;
+skill names match folders; all MCP JSON valid; OpenCode loads 19 agents and **now discovers
+8 skills**; pi re-synced with the new content.
+
+**Carried forward:**
+- Phase 3: installer `migrate-data` step (old → new data paths) for other machines; create
+  `~/.local/share/ai-config/memory/` before starting the memory server.
+- Phase 4: pi doesn't see repo `skills/` yet (`agent-config-targets` is referenced by the pi
+  onboarder skill but not installed). Expand `~` / `{{BASE_PROJECT_PATH}}` in MCP args per tool.
+- Phase 5: setup-doctor, `.env.example`, README still OpenCode-only.
 
 ### 3. Split the installer
 - `installer/core.py` ← reusable parts of `setup.py`.
@@ -145,7 +169,7 @@ All 7 skill examples execute. Setup doctor is healthy.
 
 ## Open decisions (need answers before the phase in brackets)
 1. pi agents: skills only, or also add a subagent extension later? [4]
-2. Existing data in `~/Documents/opencode/*`: move it automatically, or keep it via `.env`? [2]
+2. ~~Existing data~~ → **moved to `~/Documents/ai-config/`** (decided, done).
 3. ~~Local layer folder name~~ → **`ai/`** (decided).
 4. Claude Code MCP: write `~/.claude.json` via `claude mcp`, or only print the commands? [4]
 

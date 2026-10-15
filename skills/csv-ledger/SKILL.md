@@ -7,7 +7,7 @@ description: "Append and query expenses in a CSV ledger (monthly totals, per-cat
 
 # csv-ledger
 
-Append and query expense entries in a CSV-based ledger. Default ledger: `BUDGET_LEDGER_LOCATION` from `.env`, else `~/Documents/opencode/budget/ledger.csv`.
+Append and query expense entries in a CSV-based ledger. Default ledger: `BUDGET_LEDGER_LOCATION` from `.env`, else `~/Documents/ai-config/budget/ledger.csv`.
 
 ## How to use
 
@@ -20,7 +20,7 @@ import sys; sys.path.insert(0, "<skill-dir>")
 from datetime import datetime
 from pathlib import Path
 from csv_ledger import ExpenseLedger, ExpenseEntry
-l = ExpenseLedger(Path("~/Documents/opencode/budget/ledger.csv").expanduser())
+l = ExpenseLedger(Path("~/Documents/ai-config/budget/ledger.csv").expanduser())
 l.add_entry(ExpenseEntry(datetime.now(), 12.5, "food", "lunch", currency="EUR"))
 print(l.total_by_category(datetime.now().year, datetime.now().month))
 EOF

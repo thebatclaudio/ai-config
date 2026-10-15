@@ -41,4 +41,4 @@ Invokes the `@news-curator` agent with your configured feeds. Fetches and dedupl
 ## See also
 
 - `@news-curator` agent for detailed control over the digest format.
-- `~/.config/opencode/personal/feeds.toml` for configuring feeds.
+- `~/.config/ai-config/feeds.toml` for configuring feeds.

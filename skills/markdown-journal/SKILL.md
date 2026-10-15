@@ -7,7 +7,7 @@ description: "Create, read, append to and list daily markdown journal entries. U
 
 # markdown-journal
 
-Open and append daily markdown journal entries (`YYYY-MM-DD.md`). Default root: `~/Documents/opencode/journal/` (override with `journal_location`).
+Open and append daily markdown journal entries (`YYYY-MM-DD.md`). Default root: `~/Documents/ai-config/journal/` (override with `journal_location`).
 
 ## How to use
 

@@ -5,6 +5,6 @@
     "@modelcontextprotocol/server-memory"
   ],
   "env": {
-    "OPENCODE_MEMORY_STORE": "~/.local/share/opencode/memory/store.json"
+    "MEMORY_FILE_PATH": "~/.local/share/ai-config/memory/store.json"
   }
 }

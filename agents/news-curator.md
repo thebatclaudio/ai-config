@@ -108,4 +108,4 @@ You are a personalized news curator. Your mission is to surface timely, relevant
 
 ---
 
-(Requires configured RSS/Atom/JSON feeds. Default location: `~/.config/opencode/personal/feeds.toml`. User can register feeds via the agent or manually.)
+(Requires configured RSS/Atom/JSON feeds. Default location: `~/.config/ai-config/feeds.toml`. User can register feeds via the agent or manually.)

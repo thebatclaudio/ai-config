@@ -114,4 +114,4 @@ Which feels more realistic for you?
 
 ---
 
-(This agent relies on the `csv_ledger` skill. Default ledger location: `~/Documents/opencode/budget/ledger.csv`. User can override in `.env` via `BUDGET_LEDGER_LOCATION`.)
+(This agent relies on the `csv_ledger` skill. Default ledger location: `~/Documents/ai-config/budget/ledger.csv`. User can override in `.env` via `BUDGET_LEDGER_LOCATION`.)
