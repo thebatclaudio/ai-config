@@ -148,7 +148,7 @@ Skills follow the [Agent Skills](https://agentskills.io) layout: one folder per 
 |------|-------|--------|---------|
 | git-diff-summarizer | `skills/git-diff-summarizer/SKILL.md` | `skills/git-diff-summarizer/git_diff_summarizer.py` | Parse diffs into structured chunks for any agent |
 | conventional-commit | `skills/conventional-commit/SKILL.md` | `skills/conventional-commit/conventional_commit.py` | Format/lint Conventional Commits messages |
-| feed-fetcher | `skills/feed-fetcher/SKILL.md` | `skills/feed-fetcher/feed_fetcher.py` | Normalize/dedupe/merge RSS/Atom/JSON feed items (fetch is a stub) |
+| feed-fetcher | `skills/feed-fetcher/SKILL.md` | `skills/feed-fetcher/feed_fetcher.py` | Fetch, parse, filter and merge RSS/Atom/JSON feeds from `feeds.toml` (stdlib CLI + library) |
 | csv-ledger | `skills/csv-ledger/SKILL.md` | `skills/csv-ledger/csv_ledger.py` | Append/query CSV-based ledger for budgets |
 | markdown-journal | `skills/markdown-journal/SKILL.md` | `skills/markdown-journal/markdown_journal.py` | Open/append daily markdown journal |
 | repo-indexer | `skills/repo-indexer/SKILL.md` | `skills/repo-indexer/repo_indexer.py` | Lightweight file/symbol index |
