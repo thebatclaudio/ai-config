@@ -1,6 +1,10 @@
 ---
-type: command
+name: pimp-readme
+kind: command
+scope: global
+description: "Analyze the current project's README.md and propose an improved version that's more polished, welcoming, and GitHub-ready — with a light touch of emoji, sensible badges, installation instructions, and a clear structure."
 trigger: "/pimp-readme"
+argument-hint: "[--write]"
 ---
 
 # /pimp-readme

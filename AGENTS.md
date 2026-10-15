@@ -11,7 +11,7 @@ and MCP server defined in this repository.
 
 **Key implication:** Any change you make here — a new agent, a tweaked prompt, a skill update — is **global**. It affects every project you work on.
 
-**Local (project-scoped) overrides:** When working inside this repository itself, the `.opencode/` folder contains **project-only** entries that apply here and nowhere else. These allow you to extend or specialize the framework without polluting global state. They are discovered automatically by OpenCode when the project root is `ai-config/`.
+**Local (project-scoped) overrides:** When working inside this repository itself, the `ai/` folder contains **project-only** entries that apply here and nowhere else. These allow you to extend or specialize the framework without polluting global state. The installer exposes them to each coding tool through its project folder (e.g. `.opencode/`), which is generated and git-ignored.
 
 ---
 
@@ -24,7 +24,7 @@ These entries are **available everywhere** and used across all your projects and
 - **PERSONAL** — life management: budgeting, news, social posting, meal planning, journaling, decision-making, learning, trip planning, inbox management.
 - **DEV** — code work: reviewing, committing, documentation, debugging, refactoring, dependency audits, prompt improvement.
 
-### Local Layer (`.opencode/`, discovered when CWD is this repo)
+### Local Layer (`ai/`, active when CWD is this repo)
 
 These entries are **available only when you're inside the `ai-config/` project**:
 
@@ -76,16 +76,16 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | refactor-surgeon | Targeted refactors with diffs, no rewrites | *default* | `@refactor-surgeon` | `agents/refactor-surgeon.md` |
 | dependency-auditor | CVE, outdated, unused in any ecosystem | *default* | `@dependency-auditor` | `agents/dependency-auditor.md` |
 | prompt-engineer | Critiques & improves prompts | *default* | `@prompt-engineer` | `agents/prompt-engineer.md` |
-| project-onboarder | Analyzes projects and scaffolds full OpenCode config | *default* | `@project-onboarder` or `/onboard` | `agents/onboard.md` |
+| project-onboarder | Analyzes projects and scaffolds full OpenCode config | *default* | `@project-onboarder` or `/onboard` | `agents/project-onboarder.md` |
 | project-bootstrapper | Discovery → research → stack proposal → scaffold a new project + its OpenCode config | *default* | `@project-bootstrapper` or `/bootstrap` | `agents/project-bootstrapper.md` |
 
-### META Agents (Local, `.opencode/`)
+### META Agents (Local, `ai/`)
 
 | Name | Role | Model | Trigger | File |
 |------|------|-------|---------|------|
-| agents-curator | Lints AGENTS.md ↔ filesystem | *default* | `@agents-curator` | `.opencode/agent/agents-curator.md` |
-| setup-doctor | Validates symlinks, opencode.json, .env | *default* | `@setup-doctor` | `.opencode/agent/setup-doctor.md` |
-| entry-scaffolder | Creates new agent/command/skill/mcp stubs | *default* | `@entry-scaffolder` | `.opencode/agent/entry-scaffolder.md` |
+| agents-curator | Lints AGENTS.md ↔ filesystem | *default* | `@agents-curator` | `ai/agents/agents-curator.md` |
+| setup-doctor | Validates symlinks, opencode.json, .env | *default* | `@setup-doctor` | `ai/agents/setup-doctor.md` |
+| entry-scaffolder | Creates new agent/command/skill/mcp stubs | *default* | `@entry-scaffolder` | `ai/agents/entry-scaffolder.md` |
 
 ---
 
@@ -116,36 +116,38 @@ budget_ledger_location: null     # overrides default ~/Documents/opencode/budget
 | `/onboard` | global | Analyze project and generate full OpenCode onboarding plan | `commands/onboard.md` |
 | `/bootstrap` | global | Bootstrap a brand-new project: discovery, research, stack pick, scaffold | `commands/bootstrap.md` |
 
-### META Commands (Local, `.opencode/`)
+### META Commands (Local, `ai/`)
 
 | Name | Scope | Purpose | File |
 |------|-------|---------|------|
-| `/scaffold` | local | Create new agent/command/skill/mcp stub | `.opencode/command/scaffold.md` |
-| `/sync` | local | Run setup.py and show recap | `.opencode/command/sync.md` |
-| `/audit-config` | local | Run agents-curator + setup-doctor | `.opencode/command/audit-config.md` |
+| `/scaffold` | local | Create new agent/command/skill/mcp stub | `ai/commands/scaffold.md` |
+| `/sync` | local | Run setup.py and show recap | `ai/commands/sync.md` |
+| `/audit-config` | local | Run agents-curator + setup-doctor | `ai/commands/audit-config.md` |
 
 ---
 
 ## 5. Skill Registry
 
+Skills follow the [Agent Skills](https://agentskills.io) layout: one folder per skill with a `SKILL.md` (frontmatter `name` + `description`) and any bundled scripts next to it.
+
 ### Global Skills (Reusable utilities)
 
-| Name | Entry Point | Purpose |
-|------|-------------|---------|
-| git_diff_summarizer | `skills/git_diff_summarizer.py` | Parse diffs into structured chunks for any agent |
-| conventional_commit | `skills/conventional_commit.py` | Format/lint Conventional Commits messages |
-| feed_fetcher | `skills/feed_fetcher.py` | Fetch & normalize RSS/Atom/JSON feeds |
-| csv_ledger | `skills/csv_ledger.py` | Append/query CSV-based ledger for budgets |
-| markdown_journal | `skills/markdown_journal.py` | Open/append daily markdown journal |
-| repo_indexer | `skills/repo_indexer.py` | Lightweight file/symbol index |
-| secret_scanner | `skills/secret_scanner.py` | Regex+entropy scan for secrets |
+| Name | Skill | Script | Purpose |
+|------|-------|--------|---------|
+| git-diff-summarizer | `skills/git-diff-summarizer/SKILL.md` | `skills/git-diff-summarizer/git_diff_summarizer.py` | Parse diffs into structured chunks for any agent |
+| conventional-commit | `skills/conventional-commit/SKILL.md` | `skills/conventional-commit/conventional_commit.py` | Format/lint Conventional Commits messages |
+| feed-fetcher | `skills/feed-fetcher/SKILL.md` | `skills/feed-fetcher/feed_fetcher.py` | Normalize/dedupe/merge RSS/Atom/JSON feed items (fetch is a stub) |
+| csv-ledger | `skills/csv-ledger/SKILL.md` | `skills/csv-ledger/csv_ledger.py` | Append/query CSV-based ledger for budgets |
+| markdown-journal | `skills/markdown-journal/SKILL.md` | `skills/markdown-journal/markdown_journal.py` | Open/append daily markdown journal |
+| repo-indexer | `skills/repo-indexer/SKILL.md` | `skills/repo-indexer/repo_indexer.py` | Lightweight file/symbol index |
+| secret-scanner | `skills/secret-scanner/SKILL.md` | `skills/secret-scanner/secret_scanner.py` | Regex+entropy scan for secrets |
 
-### Local Skills (`.opencode/`)
+### Local Skills (`ai/`)
 
-| Name | Entry Point | Purpose |
-|------|-------------|---------|
-| agents_md_linter | `.opencode/skill/agents_md_linter.py` | Validate AGENTS.md ↔ files |
-| setup_doctor | `.opencode/skill/setup_doctor.py` | Health-check symlinks, opencode.json, .env |
+| Name | Skill | Script | Purpose |
+|------|-------|--------|---------|
+| agents-md-linter | `ai/skills/agents-md-linter/SKILL.md` | `ai/skills/agents-md-linter/agents_md_linter.py` | Validate AGENTS.md ↔ files |
+| setup-doctor | `ai/skills/setup-doctor/SKILL.md` | `ai/skills/setup-doctor/setup_doctor.py` | Health-check symlinks, opencode.json, .env |
 
 ---
 
@@ -168,9 +170,10 @@ All global; use in any project. No project-scoped MCPs in this version.
 
 | Concern | Rule |
 |---------|------|
-| File naming | `kebab-case.md` for agents/commands; `snake_case.py` for skills |
-| One per file | Exactly one agent/command per file; skills may contain multiple functions |
-| Frontmatter | Use OpenCode YAML frontmatter (see examples below) |
+| File naming | `kebab-case.md` for agents/commands; `kebab-case/` folder with `SKILL.md` for skills; bundled scripts in `snake_case.py` |
+| One per file | Exactly one agent/command per file; one skill per folder (scripts may contain multiple functions) |
+| Frontmatter | Canonical, tool-neutral YAML: `name` (= file/folder name), `kind` (`agent`/`command`/`skill`), `scope` (`global`/`local`), `description`, plus `trigger` for agents/commands and optional `argument-hint` for commands. Tool-specific fields go under `targets.<tool>`. |
+| Layout | Global: `agents/`, `commands/`, `skills/`, `mcp/` at repo root. Local: same structure under `ai/`. |
 | Documentation | Every entry in section 3–6 must have a corresponding file and doc block (see 8) |
 | Lifecycle | Add → document in this table → test locally → commit → push. Remove the row when retiring. |
 | Scope clarity | Always mark entries as **global** or **local** (see section 1); do not mix scopes in a single file |
@@ -183,7 +186,10 @@ Every agent file (`.md`) should follow this structure:
 
 ```yaml
 ---
-type: agent
+name: agent-name
+kind: agent
+scope: global            # or local
+description: "One sentence: what it does and when to use it."
 trigger: "@agent-name"
 ---
 
@@ -244,8 +250,12 @@ Every command file (`.md`) should follow this structure:
 
 ```yaml
 ---
-type: command
+name: command-name
+kind: command
+scope: global            # or local
+description: "One sentence describing the command."
 trigger: "/command-name"
+argument-hint: "[argument] [--flag]"
 ---
 
 # /command-name

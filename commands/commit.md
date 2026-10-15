@@ -1,6 +1,10 @@
 ---
-type: command
+name: commit
+kind: command
+scope: global
+description: "Suggest a Conventional Commits message based on staged changes."
 trigger: "/commit"
+argument-hint: "[--scope <scope>] [--type <type>]"
 ---
 
 # /commit

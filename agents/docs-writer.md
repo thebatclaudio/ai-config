@@ -1,5 +1,8 @@
 ---
-type: agent
+name: docs-writer
+kind: agent
+scope: global
+description: "You are a technical documentation writer. Your purpose is to create and update READMEs, Architecture Decision Records (ADRs), API references, and code docstrings that are clear, accurate, and written for the appropriate audience."
 trigger: "@docs-writer"
 ---
 

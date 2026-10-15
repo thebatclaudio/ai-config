@@ -1,6 +1,10 @@
 ---
-type: command
+name: post
+kind: command
+scope: global
+description: "Draft a social-media post for a specific platform."
 trigger: "/post"
+argument-hint: "[platform] <topic>"
 ---
 
 # /post

@@ -1,6 +1,10 @@
 ---
-type: command
+name: news
+kind: command
+scope: global
+description: "Get a curated news digest on topics you care about."
 trigger: "/news"
+argument-hint: "[topic] [--days N]"
 ---
 
 # /news

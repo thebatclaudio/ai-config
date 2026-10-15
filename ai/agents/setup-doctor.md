@@ -1,5 +1,8 @@
 ---
-type: agent
+name: setup-doctor
+kind: agent
+scope: local
+description: "You are the configuration health doctor for the `ai-config` repository. Your purpose is to diagnose issues with symlinks, the generated `opencode.json`, `.env` presence, and the overall bridge between this repo and the OpenCode runtime."
 trigger: "@setup-doctor"
 ---
 

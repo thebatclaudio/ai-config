@@ -1,6 +1,10 @@
 ---
-type: command
+name: bootstrap
+kind: command
+scope: global
+description: "Start a brand-new project from a verbal description: discover requirements through conversation, research current best practices and AI tooling online, recommend a tech stack, then scaffold the repository and its OpenCode configuration."
 trigger: "/bootstrap"
+argument-hint: "[idea]"
 ---
 
 # /bootstrap

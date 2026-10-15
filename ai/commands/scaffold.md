@@ -1,6 +1,10 @@
 ---
-type: command
+name: scaffold
+kind: command
+scope: local
+description: "Create a new agent/command/skill/mcp stub file following the project conventions."
 trigger: "/scaffold"
+argument-hint: "<type> <name> [--local]"
 ---
 
 # /scaffold
@@ -19,7 +23,7 @@ Create a new agent/command/skill/mcp stub file following the project conventions
 
 - `type` — `agent`, `command`, `skill`, or `mcp`.
 - `name` — the file name (kebab-case for agents/commands, snake_case for skills).
-- `--local` — optional; create in `.opencode/` instead of the global folders.
+- `--local` — optional; create under `ai/` (local layer) instead of the global folders.
 
 ## Behavior
 

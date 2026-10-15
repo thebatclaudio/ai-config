@@ -1,5 +1,8 @@
 ---
-type: command
+name: audit-config
+kind: command
+scope: local
+description: "Run all config validators: AGENTS.md linter + setup health check."
 trigger: "/audit-config"
 ---
 

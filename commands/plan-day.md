@@ -1,6 +1,10 @@
 ---
-type: command
+name: plan-day
+kind: command
+scope: global
+description: "Build a structured daily schedule."
 trigger: "/plan-day"
+argument-hint: "[date] [--priorities \"item1, item2\"]"
 ---
 
 # /plan-day

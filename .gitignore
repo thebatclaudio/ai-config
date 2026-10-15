@@ -19,3 +19,12 @@ env/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Multi-target build output and local install snapshots
+dist/
+.snapshots/
+
+# Per-tool project folders: generated from ai/ by the installer
+.opencode/
+.pi/
+.claude/

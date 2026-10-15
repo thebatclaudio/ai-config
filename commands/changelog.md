@@ -1,6 +1,10 @@
 ---
-type: command
+name: changelog
+kind: command
+scope: global
+description: "Generate a changelog from git commit history since the last tag."
 trigger: "/changelog"
+argument-hint: "[tag-range]"
 ---
 
 # /changelog

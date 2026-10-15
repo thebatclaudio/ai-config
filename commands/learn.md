@@ -1,6 +1,10 @@
 ---
-type: command
+name: learn
+kind: command
+scope: global
+description: "Start or resume a study session on any topic."
 trigger: "/learn"
+argument-hint: "<topic> [--level beginner|intermediate|advanced]"
 ---
 
 # /learn

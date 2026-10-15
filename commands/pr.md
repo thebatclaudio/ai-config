@@ -1,6 +1,10 @@
 ---
-type: command
+name: pr
+kind: command
+scope: global
+description: "Draft a PR title and body from commits on the current branch."
 trigger: "/pr"
+argument-hint: "[base-branch]"
 ---
 
 # /pr

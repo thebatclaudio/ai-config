@@ -1,6 +1,10 @@
 ---
-type: command
+name: budget
+kind: command
+scope: global
+description: "Log an expense, see spending summaries, or follow up on savings goals."
 trigger: "/budget"
+argument-hint: "add <amount> <category> [description]"
 ---
 
 # /budget

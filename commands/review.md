@@ -1,6 +1,10 @@
 ---
-type: command
+name: review
+kind: command
+scope: global
+description: "Run the code-reviewer agent on staged or specified changes."
 trigger: "/review"
+argument-hint: "[--staged | --file <path>]"
 ---
 
 # /review

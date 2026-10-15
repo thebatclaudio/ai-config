@@ -1,6 +1,10 @@
 ---
-type: command
+name: decide
+kind: command
+scope: global
+description: "Walk through a structured decision-making process for a choice."
 trigger: "/decide"
+argument-hint: "<question>"
 ---
 
 # /decide

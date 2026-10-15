@@ -1,6 +1,10 @@
 ---
-type: command
+name: onboard
+kind: command
+scope: global
+description: "Analyze the current project and generate a comprehensive plan to make it OpenCode-ready with tailored agents, commands, skills, and MCPs."
 trigger: "/onboard"
+argument-hint: "[--global] [--quick]"
 ---
 
 # /onboard

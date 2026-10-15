@@ -1,6 +1,10 @@
 ---
-type: command
+name: sync
+kind: command
+scope: local
+description: "Run `setup.py` and show the recap, keeping the bridge fresh."
 trigger: "/sync"
+argument-hint: "[--dry-run] [--force]"
 ---
 
 # /sync

@@ -3,10 +3,12 @@ agents_md_linter.py
 
 Validate AGENTS.md ↔ filesystem consistency.
 
-Checks:
-- Every file in agents/, commands/, skills/, mcp/ has a registry entry.
+Checks (global layer at repo root, local layer under ai/):
+- Every agents/*.md, commands/*.md, skills/*/SKILL.md, mcp/*.json has a registry entry.
 - Every registry entry has a corresponding file.
 - No orphan files or missing registrations.
+
+MCP rows are matched by server name (first column) -> mcp/<name>.json.
 """
 
 import re
@@ -23,6 +25,15 @@ class AgentsMdLinter:
         "skills": "## 5. Skill Registry",
         "mcp": "## 6. MCP Server Registry",
     }
+
+    # section -> glob patterns (relative to repo root), global + local layer.
+    LAYOUT = {
+        "agents": ("agents/*.md", "ai/agents/*.md"),
+        "commands": ("commands/*.md", "ai/commands/*.md"),
+        "skills": ("skills/*/SKILL.md", "ai/skills/*/SKILL.md", "skills/*/*.py", "ai/skills/*/*.py"),
+        "mcp": ("mcp/*.json", "ai/mcp/*.json"),
+    }
+    PATH_RE = re.compile(r"^[\w./-]+/[\w.-]+\.(md|py|json)$")
 
     def __init__(self, repo_root: Path):
         self.repo_root = Path(repo_root)
@@ -74,10 +85,12 @@ class AgentsMdLinter:
         current_section = None
         for line in text.split("\n"):
             # Detect section headers
-            for section, marker in self.SECTION_MARKERS.items():
-                if marker in line:
-                    current_section = section
-                    break
+            if line.startswith("## "):
+                current_section = None
+                for section, marker in self.SECTION_MARKERS.items():
+                    if marker in line:
+                        current_section = section
+                        break
 
             # Skip table headers and separators
             if "| -----" in line or line.strip().startswith("| ---"):
@@ -86,17 +99,22 @@ class AgentsMdLinter:
             if current_section is None:
                 continue
 
-            # Extract file references from table rows
-            # Format: | ... | ... | `path/to/file` | or just path
-            if line.strip().startswith("|"):
-                # Look for backtick paths
-                matches = re.findall(r"`([^`]+)`", line)
-                for match in matches:
-                    path = Path(match)
-                    if path.exists():
-                        sections[current_section].add(match)
-                    elif (self.repo_root / path).exists():
-                        sections[current_section].add(match)
+            if not line.strip().startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if not cells or cells[0] in ("Name", "") or set(cells[0]) <= set("-: "):
+                continue
+
+            if current_section == "mcp":
+                # | name | transport | ... |  -> mcp/<name>.json
+                sections["mcp"].add(f"mcp/{cells[0].strip('`')}.json")
+                continue
+
+            # Any backtick token that looks like a path counts as a reference,
+            # whether or not it exists (so missing files are reported).
+            for match in re.findall(r"`([^`]+)`", line):
+                if self.PATH_RE.match(match):
+                    sections[current_section].add(match)
 
         return sections
 
@@ -109,12 +127,10 @@ class AgentsMdLinter:
             "mcp": set(),
         }
 
-        for key in actual:
-            dir_path = self.repo_root / key
-            if dir_path.exists():
-                for child in dir_path.iterdir():
-                    if not child.name.startswith(".") and child.name != "__pycache__":
-                        actual[key].add(f"{key}/{child.name}")
+        for key, patterns in self.LAYOUT.items():
+            for pattern in patterns:
+                for path in self.repo_root.glob(pattern):
+                    actual[key].add(path.relative_to(self.repo_root).as_posix())
 
         return actual
 

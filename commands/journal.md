@@ -1,6 +1,10 @@
 ---
-type: command
+name: journal
+kind: command
+scope: global
+description: "Open or continue today's journal entry."
 trigger: "/journal"
+argument-hint: "[type]"
 ---
 
 # /journal

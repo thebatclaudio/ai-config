@@ -1,6 +1,10 @@
 ---
-type: command
+name: explain
+kind: command
+scope: global
+description: "Get a plain-language walkthrough of a file, function, or code snippet."
 trigger: "/explain"
+argument-hint: "<target>"
 ---
 
 # /explain

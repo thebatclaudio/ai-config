@@ -110,6 +110,7 @@ class SetupDoctor:
         for opencode_name, local_name in mapping.items():
             dst = self.opencode_dir / opencode_name
             src = self.repo_root / local_name
+            # NOTE: OpenCode-only until the multi-target installer lands (Phase 3-5).
 
             if not dst.exists():
                 report.warnings.append(f"Symlink {dst}: not found (run setup.py)")
